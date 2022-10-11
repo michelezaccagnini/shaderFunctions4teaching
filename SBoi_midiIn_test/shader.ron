@@ -1,0 +1,28 @@
+#![enable(implicit_some)]
+(
+	meta: (
+		id: "",
+		name: "SBoi_midiIn_test",
+		description: "download example",
+		tags: [
+			"sboi",
+		],
+	),
+	passes: {
+		Image: (
+			inputs: [
+				(
+					asset: Music(XTrackTure),
+					sampler: Custom((
+						filter: nearest,
+						wrap: clamp,
+						vflip: true,
+					)),
+				),
+				None,
+				None,
+				None,
+			],
+		),
+	},
+)
