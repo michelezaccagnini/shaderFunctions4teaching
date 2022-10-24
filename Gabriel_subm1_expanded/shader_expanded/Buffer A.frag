@@ -25,7 +25,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
         cc_pitch = getCCval(21,channel,MIDI_IN);
         cc_env = getCCval(20,channel,MIDI_IN);
         last_data =  texelFetch(FEEDB,iCoo,0);
-        fragColor = vec4(cc_env,cc_pitch,cc_env*0.1+last_data.z,1.);
+        fragColor = vec4(cc_env,cc_pitch,cc_env*0.1+last_data.z,1);
     }
     else
     {

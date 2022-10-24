@@ -5,31 +5,29 @@
 //draw dots on screen, motion is drawn from accumulated envelope, color from pitch
 //we draw it on a buffer so we can apply feedback (trails), not possible on Image
 
-vec2 getPath(vec4 note_data, float offset)
+
+vec2 getPathLead(vec4 note_data, vec4 cc_data)
 {
-    float env_accum  = note_data.z + .5;
-    return vec2(tan(env_accum+offset),sin(env_accum+offset));
-    
+    float radius = 0.2;
+    float env = note_data.x;
+    float period = cc_data.y*TAU;
+    return vec2(cos(period),sin(period))*(radius+env*0.5);  
 }
 
-vec2 getPathLead(vec4 note_data, float time)
+vec2 getPathPatt(vec4 note_data, vec4 cc_data)
 {
-    float cycle = time;
-    cycle *= TAU;
-    float env = note_data.x*0.4;
-    float rad = 0.5;
-    vec2 path = vec2(cos(cycle),sin(cycle))*(rad+env);
-    return path;
+    float x_pos = cc_data.y*1.-0.5;
+    float y_pos = note_data.x*0.2;
+    return vec2(x_pos,y_pos-0.2);
 }
 
-vec2 getPathPatt(vec4 note_data, float time)
+vec2 getPathHats(vec4 note_data, vec4 cc_data)
 {
-    float cycle = time*1.-0.5;
-    
-    float env = note_data.x*0.2-0.1;
-    float rad = 0.5;
-    vec2 path = vec2(cycle,env);
-    return path-vec2(0,0.2);
+    float env = note_data.x;
+    float x_pos = cc_data.y*1.-0.5;
+    float y_pos = cc_data.x*0.2;
+    return vec2(x_pos,env+0.3);
+
 }
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
@@ -42,34 +40,46 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     int lead_id = 0;
     int bass_id = 1;
     int kick_id = 2;
-    int hast_id = 3;
-    int pattern_id = 4;
-    //map LEAD
+    int hats_id = 3;
+    int patt_id = 4;
+    //LEAD
     {
         vec4 note_data = texelFetch(BUF_A,ivec2(lead_id,0),0);
         vec4 cc_data   = texelFetch(BUF_A,ivec2(lead_id,1),0);
-        vec2 path = getPathLead(note_data,cc_data.y);
-        float smoothing = 0.1;
-        float d = Dot(uv*3., path, 0.01+note_data.x*0.1, smoothing );
+        vec2 pos = getPathLead(note_data, cc_data);
+        float rad = 0.01;
+        float smoothness =0.001;
+        float d = Dot(uv, pos, rad,smoothness);
         vec3 dot_col = hash31(note_data.y);
-        col += d*dot_col*(note_data.x+0.4);
+        col = max(col, d*dot_col*note_data.x*1.) ;
     }
-    
-
-    //map FAST PATTERN
+    //PATTERN
     {
-        vec4 note_data = texelFetch(BUF_A,ivec2(pattern_id,0),0);
-        vec4 cc_data   = texelFetch(BUF_A,ivec2(pattern_id,1),0);
-        vec2 path = getPathPatt(note_data,cc_data.y);
-        float smoothing = 0.05;
-        float d = Dot(uv*1., path, 0.01+note_data.x*0.041, smoothing );
+        vec4 note_data = texelFetch(BUF_A,ivec2(patt_id,0),0);
+        vec4 cc_data   = texelFetch(BUF_A,ivec2(patt_id,1),0);
+        vec2 pos = getPathPatt(note_data, cc_data);
+        float rad = 0.01+note_data.x*0.02;
+        float smoothness =note_data.x*0.1+0.05;
+        float d = Dot(uv, pos, rad,smoothness);
         vec3 dot_col = hash31(note_data.y);
-        col += d*dot_col*(note_data.x+0.4);
+        col = max(col, d*dot_col );
     }
-    
-    
+     //HATS
+    {
+        vec4 note_data = texelFetch(BUF_A,ivec2(hats_id,0),0);
+        vec4 cc_data   = texelFetch(BUF_A,ivec2(hats_id,1),0);
+        vec2 pos = getPathHats(note_data, cc_data);
+        float rad = 0.01+note_data.x*0.02;
+        float smoothness =note_data.x*0.1+0.05;
+        float d = Dot(uv, pos, rad,smoothness);
+        vec3 dot_col = hash31(note_data.y);
+        col = max(col,d*dot_col);
+    }
+
+
+   
     vec3 feed = texture(FEEDB,fragCoord/iResolution.xy).xyz;
-    col = max(col,feed*0.8);
+    col = max(col,feed*0.92);
     //col = texelFetch(BUF_A,ivec2(fragCoord*0.01),0).xxx;
 
     fragColor = vec4(col,1);//texelFetch(BUF_A,ivec2(0),0);//

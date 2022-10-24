@@ -1,6 +1,5 @@
 #define HEIGHT_CH_BLOCK 5
-
-#define TAU 6.283185
+#define TAU 6.28319
 
 #define NUM_NOTES 5
 #define NUM_DRUMS 3
@@ -37,13 +36,8 @@ vec3 hash31( float n )
     return fract(sin(vec3(n,n+1.0,n+2.0))*vec3(43758.5453123,22578.1459123,19642.3490423));
 }
 
-float Dot(vec2 uv, vec2 pos, float rad, float smoothing)
+float Dot(vec2 uv, vec2 pos, float rad, float smoothness)
 {
     float d = length(uv-pos)-rad;
-    return smoothstep(rad+smoothing,rad-smoothing,d);
-}
-
-float slide(float target, float current, float sl)
-{
-    return mix(current,target,  sl);
+    return smoothstep(rad+smoothness, rad-smoothness, d);
 }
